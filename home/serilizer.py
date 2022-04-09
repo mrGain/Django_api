@@ -50,7 +50,9 @@ class TodoSerilizer(serializers.ModelSerializer):
     #     return validated_data        
 
 class TimingTodoSerilizer(serializers.ModelSerializer):
+    todo = TodoSerilizer()
     class Meta:
         model = TimingTodo
         exclude = ['created_at','updated_at']
+        #depth = 1
         

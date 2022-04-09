@@ -1,13 +1,16 @@
 # from django.shortcuts import render
+from multiprocessing import AuthenticationError
+from urllib import request
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from rest_framework.views import APIView
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-
-from .serilizer import TodoSerilizer
-from .models import Todo
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
+from .serilizer import TodoSerilizer,TimingTodoSerilizer
+from .models import TimingTodo, Todo
 # Create your views here.
 @api_view(['GET','POST','PATCH'])
 def home(request):
@@ -107,6 +110,9 @@ def patch_todo(request):
 
 # Class besed view.
 class TodoView(APIView):
+    authenticaation_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    # todo_objs = Todo.objects.filter(user = request.user)
     def get(self, request):
         todo_objs = Todo.objects.all()
         serilizer = TodoSerilizer(todo_objs, many=True)
@@ -181,9 +187,40 @@ class TodoViewSet(viewsets.ModelViewSet):
     queryset = Todo.objects.all()
     serializer_class = TodoSerilizer
 
-    @action(detail=False, methods=['post'])
-    def add_date_to_todo(self):
-        try:
+    @action(detail=False, methods=['get'])
+    def get_timing_todo(self, request):
+        objs = TimingTodo.objects.all()
+        serializer = TimingTodoSerilizer(objs, many = True)
+        return Response({
+            'status':True,
+            'message': 'timing todo fached',
+            'data':serializer.data
+        })
 
-        except:    
+    @action(detail=False, methods=['post'])
+    def add_date_to_todo(self, request):
+        try:
+            data = request.data 
+            serilizer = TimingTodoSerilizer(data=data)
+            if serilizer.is_valid():
+                serilizer.save()
+                return Response({
+                    'status':True,
+                    'message':'success data',
+                    'data':serilizer.data
+                })
+
+            return Response({
+                'status':False,
+                'message':'invalid data',
+                'data':serilizer.errors
+            })    
+            
+
+        except Exception as e:
+            print(e)
+            return Response({
+                'status':False,
+                'message':'something went Wrong..'
+            })   
             
